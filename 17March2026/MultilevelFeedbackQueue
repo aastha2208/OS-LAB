@@ -1,0 +1,160 @@
+#include <stdio.h>
+#include <stdbool.h>
+
+#define MAX_TIME 300
+
+typedef struct
+{
+    int id;
+    int at, bt, rt;
+    int priority;
+    int q_usage;
+    bool finished;
+} Process;
+
+void print_gantt(int timeline[], int total_time)
+{
+    printf("\n--- FINAL GANTT CHART ---\n");
+
+    int i = 0;
+
+    printf(" ");
+    while (i < total_time)
+    {
+        int j = i;
+        while (j < total_time && timeline[j] == timeline[i])
+            j++;
+
+        printf("------");
+        i = j;
+    }
+
+    printf("-\n|");
+
+    i = 0;
+    while (i < total_time)
+    {
+        int j = i;
+        while (j < total_time && timeline[j] == timeline[i])
+            j++;
+
+        if (timeline[i] == -1)
+            printf(" idle |");
+        else
+            printf(" P%d  |", timeline[i]);
+
+        i = j;
+    }
+
+    printf("\n ");
+
+    i = 0;
+    while (i < total_time)
+    {
+        int j = i;
+        while (j < total_time && timeline[j] == timeline[i])
+            j++;
+
+        printf("------");
+        i = j;
+    }
+
+    printf("-\n");
+
+    printf("0");
+
+    i = 0;
+    while (i < total_time)
+    {
+        int j = i;
+        while (j < total_time && timeline[j] == timeline[i])
+            j++;
+
+        printf("%6d", j);
+        i = j;
+    }
+
+    printf("\n\n");
+}
+
+int main()
+{
+    int n;
+    printf("Enter number of processes: ");
+
+    if (scanf("%d", &n) != 1)
+        return 1;
+
+    Process p[n];
+
+    for (int i = 0; i < n; i++)
+    {
+        p[i].id = i + 1;
+        printf("P%d - Enter AT and BT: ", i + 1);
+        scanf("%d %d", &p[i].at, &p[i].bt);
+        p[i].rt = p[i].bt;
+        p[i].priority = 0;
+        p[i].q_usage = 0;
+        p[i].finished = false;
+    }
+
+    int timeline[MAX_TIME];
+    int current_time = 0;
+    int completed = 0;
+
+    int Q0_QUANTUM = 4;
+    int Q1_QUANTUM = 8;
+
+    while (completed < n && current_time < MAX_TIME)
+    {
+        int best_p = -1;
+
+        for (int q = 0; q < 3; q++)
+        {
+            for (int i = 0; i < n; i++)
+            {
+                if (!p[i].finished && p[i].at <= current_time && p[i].priority == q)
+                {
+                    best_p = i;
+                    break;
+                }
+            }
+
+            if (best_p != -1)
+                break;
+        }
+
+        if (best_p != -1)
+        {
+            timeline[current_time] = p[best_p].id;
+            p[best_p].rt--;
+            p[best_p].q_usage++;
+            current_time++;
+
+            if (p[best_p].rt == 0)
+            {
+                p[best_p].finished = true;
+                completed++;
+            }
+            else if (p[best_p].priority == 0 && p[best_p].q_usage >= Q0_QUANTUM)
+            {
+                p[best_p].priority = 1;
+                p[best_p].q_usage = 0;
+            }
+            else if (p[best_p].priority == 1 && p[best_p].q_usage >= Q1_QUANTUM)
+            {
+                p[best_p].priority = 2;
+                p[best_p].q_usage = 0;
+            }
+        }
+        else
+        {
+            timeline[current_time] = -1;
+            current_time++;
+        }
+    }
+
+    print_gantt(timeline, current_time);
+
+    return 0;
+}
